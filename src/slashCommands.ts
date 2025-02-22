@@ -1,15 +1,16 @@
-import { type ChatInputCommandInteraction, REST, Routes, type SlashCommandBuilder } from 'discord.js';
+import { type ChatInputCommandInteraction, REST, Routes, type SlashCommandBuilder, type SlashCommandOptionsOnlyBuilder } from 'discord.js';
 import config from './config';
 import logger from './logger';
 
 import * as pingCommand from './commands/ping';
+import * as createCommand from './commands/create';
 
 export type SlashCommand = {
-    data: SlashCommandBuilder;
+    data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
     execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
 };
 
-export const commands: SlashCommand[] = [pingCommand];
+export const commands: SlashCommand[] = [pingCommand, createCommand];
 
 /**
  * Register the slash commands

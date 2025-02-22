@@ -7,7 +7,7 @@ const logger = pino({
   transport: isDev ? {
     target: 'pino-pretty',
     options: {
-      colorize: true
+      colorize: true,
     }
   } : undefined,
 });
