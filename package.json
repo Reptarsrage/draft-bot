@@ -1,0 +1,31 @@
+{
+  "name": "draft-bot",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@eslint/js": "^9.21.0",
+    "@types/bun": "latest",
+    "eslint": "^9.21.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.3",
+    "globals": "^16.0.0",
+    "pino-pretty": "^13.0.0",
+    "prettier": "^3.5.2",
+    "typescript-eslint": "^8.24.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "discord.js": "^14.18.0",
+    "http-graceful-shutdown": "^3.1.14",
+    "pino": "^9.6.0",
+    "tiny-invariant": "^1.3.3",
+    "zod": "^3.24.2"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "start": "bun run src/index.ts"
+  }
+}
