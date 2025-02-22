@@ -1,16 +1,19 @@
-import { type ChatInputCommandInteraction, REST, Routes, type SlashCommandBuilder, type SlashCommandOptionsOnlyBuilder } from 'discord.js';
+import { type AutocompleteInteraction, type ChatInputCommandInteraction, REST, Routes, type SlashCommandBuilder, type SlashCommandOptionsOnlyBuilder } from 'discord.js';
 import config from './config';
 import logger from './logger';
 
+// TODO: Auto glob these imports
 import * as pingCommand from './commands/ping';
 import * as createCommand from './commands/create';
+import * as joinCommand from './commands/join';
 
 export type SlashCommand = {
     data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder;
     execute: (interaction: ChatInputCommandInteraction) => Promise<void>;
+    autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>;
 };
 
-export const commands: SlashCommand[] = [pingCommand, createCommand];
+export const commands: SlashCommand[] = [pingCommand, createCommand, joinCommand];
 
 /**
  * Register the slash commands

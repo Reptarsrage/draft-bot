@@ -2,8 +2,12 @@ import axios from 'axios';
 import config from './config';
 import logger from './logger';
 
-export interface CreateTournamentResponse {
+export interface TournamentResponse {
     tournament: Tournament
+}
+
+export interface ParticipantResponse {
+    participant: Participant
 }
 
 export interface Tournament {
@@ -72,6 +76,36 @@ export interface Tournament {
     group_stages_were_started: boolean
 }
 
+export interface Participant {
+    active: boolean
+    checked_in_at: any
+    created_at: string
+    final_rank: any
+    group_id: any
+    icon: any
+    id: number
+    invitation_id: any
+    invite_email: any
+    misc: any
+    name: string
+    on_waiting_list: boolean
+    seed: number
+    tournament_id: number
+    updated_at: string
+    challonge_username: any
+    challonge_email_address_verified: any
+    removable: boolean
+    participatable_or_invitation_attached: boolean
+    confirm_remove: boolean
+    invitation_pending: boolean
+    display_name_with_invitation_email_address: string
+    email_hash: any
+    username: any
+    attached_participatable_portrait_url: any
+    can_check_in: boolean
+    checked_in: boolean
+    reactivatable: boolean
+  }
 
 /**
  * Create a new tournament
@@ -87,9 +121,10 @@ export async function createTournament(name: string) {
     url.searchParams.set('tournament[tournament_type]', 'round robin');
     url.searchParams.set('tournament[description]', 'Created by the Draft Bot 🤖');
     url.searchParams.set('tournament[open_signup]', 'true');
+    url.searchParams.set('tournament[game_id]', '289'); // Magic: The Gathering
 
     try {
-        const response = await axios.post<CreateTournamentResponse>(url.toString());
+        const response = await axios.post<TournamentResponse>(url.toString());
 
         if (response.status !== 200) {
             logger.error(`Failed to create tournament ${name}: ${response.statusText}`);
@@ -103,6 +138,61 @@ export async function createTournament(name: string) {
     } catch (error) {
         handleError(error);
         throw new Error(`Failed to create tournament ${name}`);
+    }
+}
+
+/**
+ * Get a tournament by id or url
+ * @param tournamentId - The id or url of the tournament to get
+ * @see https://api.challonge.com/v1/documents/tournaments/show
+ */
+export async function getTournament(tournamentId: string) {
+    const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}.json`);
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
+
+    const response = await axios.get<TournamentResponse>(url.toString());
+    return response.data.tournament;
+}
+
+/**
+ * Get all tournaments in a given state
+ * @param state - The state of the tournaments to get
+ * @see https://api.challonge.com/v1/documents/tournaments/index
+ */
+export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 'ended' = 'all') {
+    const url = new URL('https://api.challonge.com/v1/tournaments.json');
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
+    url.searchParams.set('state', state);
+
+    try {
+        logger.info(`Getting tournaments in state ${state}...`);
+        const response = await axios.get<TournamentResponse[]>(url.toString());
+        return response.data.map(data => data.tournament);
+    } catch (error) {
+        handleError(error);
+        throw new Error('Failed to get tournaments');
+    }
+}
+
+/**
+ * Join a tournament
+ * @param tournamentId - The id or url of the tournament to join
+ * @param participantName - The name of the participant to join
+ * @see https://api.challonge.com/v1/documents/tournaments/join
+ */
+export async function joinTournament(tournamentId: string, participantName: string) {
+    const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}/participants.json`);
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
+    url.searchParams.set('participant[name]', participantName);
+    url.searchParams.set('participant[challonge_username]', participantName);
+
+    try {
+        logger.info(`Joining tournament ${tournamentId} as ${participantName}...`);
+        const response = await axios.post<ParticipantResponse>(url.toString());
+        return response.data.participant;
+    } catch (error) {
+        handleError(error);
+        throw new Error(`Failed to join tournament ${tournamentId}`);
     }
 }
 
