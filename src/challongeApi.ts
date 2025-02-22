@@ -1,6 +1,9 @@
 import axios from 'axios';
 import config from './config';
 import logger from './logger';
+import NodeCache from 'node-cache';
+
+const cache = new NodeCache({ stdTTL: 30 });
 
 export interface TournamentResponse {
     tournament: Tournament
@@ -142,16 +145,38 @@ export async function createTournament(name: string) {
 }
 
 /**
+ * Start a tournament
+ * @param tournamentId - The id of the tournament to start
+ * @see https://api.challonge.com/v1/documents/tournaments/start
+ */
+export async function startTournament(tournamentId: string) {
+    const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}/start.json`);
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
+
+    logger.info(`Starting tournament ${tournamentId}...`);
+    await axios.post<TournamentResponse>(url.toString());
+}
+
+/**
  * Get a tournament by id or url
  * @param tournamentId - The id or url of the tournament to get
  * @see https://api.challonge.com/v1/documents/tournaments/show
  */
 export async function getTournament(tournamentId: string) {
+    const cachedTournament = cache.get<Tournament>(`tournament_${tournamentId}`);
+    if (cachedTournament) {
+        return cachedTournament;
+    }
+
     const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}.json`);
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
 
+    logger.info(`Getting tournament ${tournamentId}...`);
     const response = await axios.get<TournamentResponse>(url.toString());
-    return response.data.tournament;
+    const tournament = response.data.tournament;
+    cache.set(`tournament_${tournamentId}`, tournament);
+    logger.info(`Tournament ${tournamentId} got: ${tournament.name}`);
+    return tournament;
 }
 
 /**
@@ -160,6 +185,11 @@ export async function getTournament(tournamentId: string) {
  * @see https://api.challonge.com/v1/documents/tournaments/index
  */
 export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 'ended' = 'all') {
+    const cachedTournaments = cache.get<Tournament[]>(`tournaments_${state}`);
+    if (cachedTournaments) {
+        return cachedTournaments;
+    }
+
     const url = new URL('https://api.challonge.com/v1/tournaments.json');
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
     url.searchParams.set('state', state);
@@ -167,7 +197,10 @@ export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 
     try {
         logger.info(`Getting tournaments in state ${state}...`);
         const response = await axios.get<TournamentResponse[]>(url.toString());
-        return response.data.map(data => data.tournament);
+        const tournaments = response.data.map(data => data.tournament);
+        cache.set(`tournaments_${state}`, tournaments);
+        logger.info(`Got ${tournaments.length} tournaments in state ${state}`);
+        return tournaments;
     } catch (error) {
         handleError(error);
         throw new Error('Failed to get tournaments');
@@ -189,6 +222,7 @@ export async function joinTournament(tournamentId: string, participantName: stri
     try {
         logger.info(`Joining tournament ${tournamentId} as ${participantName}...`);
         const response = await axios.post<ParticipantResponse>(url.toString());
+        logger.info(`Joined tournament ${tournamentId} as ${participantName}`);
         return response.data.participant;
     } catch (error) {
         handleError(error);
