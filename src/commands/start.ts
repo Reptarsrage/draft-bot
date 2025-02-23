@@ -5,10 +5,10 @@ import logger from '../logger'
 export const data = new SlashCommandBuilder()
     .setName('start')
     .setDescription('Start the draft')
-    .addStringOption((option) => option.setName('name').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
+    .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const name = interaction.options.getString('name', true)
+    const name = interaction.options.getString('draft', true)
 
     const tournament = await getTournament(name)
     await startTournament(tournament.id.toString())
@@ -26,7 +26,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
     const focusedOption = interaction.options.getFocused(true)
-    if (focusedOption.name !== 'name') {
+    if (focusedOption.name !== 'draft') {
         logger.warn(`No autocomplete for ${interaction.commandName} ${focusedOption.name}`)
         return []
     }

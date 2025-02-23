@@ -4,10 +4,10 @@ import { createTournament } from '../challongeApi'
 export const data = new SlashCommandBuilder()
     .setName('create')
     .setDescription('Create a new draft')
-    .addStringOption((option) => option.setName('name').setDescription('The name of the draft').setRequired(true))
+    .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const name = interaction.options.getString('name', true)
+    const name = interaction.options.getString('draft', true)
 
     const tourney = await createTournament(name)
 

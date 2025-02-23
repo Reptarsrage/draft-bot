@@ -1,22 +1,21 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, EmbedBuilder, type AutocompleteInteraction } from 'discord.js'
-import { getTournaments, joinTournament, getTournament } from '../challongeApi'
+import { getTournaments, endTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
 
 export const data = new SlashCommandBuilder()
-    .setName('join')
-    .setDescription('Join the draft')
+    .setName('end')
+    .setDescription('Finalize the draft')
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     const name = interaction.options.getString('draft', true)
 
-    const tournament = await getTournament(name)
-    const participant = await joinTournament(tournament.id.toString(), interaction.user.username)
+    const tournament = await getTournament(name, true, true)
+    await endTournament(tournament.id.toString())
 
-    const exampleEmbed = new EmbedBuilder()
-        .setTitle(`User ${participant.challonge_username} joined ${tournament.name}`)
-        .setURL(tournament.full_challonge_url)
-        .setImage(participant.attached_participatable_portrait_url)
+    // TODO: Print standings
+
+    const exampleEmbed = new EmbedBuilder().setTitle(`Tournament ${tournament.name} ended`).setURL('https://challonge.com/1zqui9oz/module')
 
     await interaction.reply({ embeds: [exampleEmbed] })
 }
@@ -28,7 +27,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return []
     }
 
-    const tournaments = await getTournaments('pending')
+    const tournaments = await getTournaments('in_progress')
     const filtered = tournaments.filter((tournament) => tournament.name.startsWith(focusedOption.value))
     await interaction.respond(
         filtered.map((tournament) => ({

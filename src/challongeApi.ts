@@ -28,6 +28,7 @@ export interface Tournament {
     description: string
     game_id: number
     group_stages_enabled: boolean
+    sign_up_url: string
     hide_forum: boolean
     hide_seeds: boolean
     hold_third_place_match: boolean
@@ -181,6 +182,24 @@ export async function startTournament(tournamentId: string) {
     } catch (error) {
         handleError(error)
         throw new Error(`Failed to start tournament ${tournamentId}`)
+    }
+}
+
+/**
+ * End a tournament
+ * @param tournamentId - The id of the tournament to end
+ * @see https://api.challonge.com/v1/documents/tournaments/end
+ */
+export async function endTournament(tournamentId: string) {
+    const url = new URL(`/v1/tournaments/${tournamentId}/finalize.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+
+    try {
+        logger.info(`Ending tournament ${tournamentId}...`)
+        await axios.post<TournamentResponse>(url.toString())
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to end tournament ${tournamentId}`)
     }
 }
 
