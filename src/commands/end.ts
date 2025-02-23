@@ -32,16 +32,20 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const participated = standings
         .filter((standing) => standing.rank > 1)
         .map(({ name, wins, losses, ties }) => {
-            return `${name} (${wins}-${losses}-${ties})`
+            return `🏆 ${name} (${wins}-${losses}-${ties})`
         })
         .join('\n')
 
     const exampleEmbed = getEmbedBuilder()
         .setTitle(`${tournament.name} ended!`)
-        .addFields({ name: 'Standings', value: winners }, { name: 'Received a participation trophy 🏆', value: participated })
+        .addFields({ name: 'Standings', value: winners })
         .setURL(tournament.full_challonge_url)
         .setImage(tournament.live_image_url)
         .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')
+
+    if (participated.length > 0) {
+        exampleEmbed.addFields({ name: 'Received a participation trophy', value: participated })
+    }
 
     await interaction.reply({ embeds: [exampleEmbed] })
 }
