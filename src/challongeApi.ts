@@ -1,9 +1,10 @@
-import axios from 'axios';
-import config from './config';
-import logger from './logger';
-import NodeCache from 'node-cache';
+import axios from 'axios'
+import config from './config'
+import logger from './logger'
+import NodeCache from 'node-cache'
 
-const cache = new NodeCache({ stdTTL: 30 });
+const cache = new NodeCache({ stdTTL: 30 })
+const baseURL = 'https://api.challonge.com/'
 
 export interface TournamentResponse {
     tournament: Tournament
@@ -13,13 +14,14 @@ export interface ParticipantResponse {
     participant: Participant
 }
 
+export interface MatchResponse {
+    match: Match
+}
+
 export interface Tournament {
     accept_attachments: boolean
     allow_participant_match_reporting: boolean
     anonymous_voting: boolean
-    category: any
-    check_in_duration: any
-    completed_at: any
     created_at: string
     created_by_api: boolean
     credit_capped: boolean
@@ -37,7 +39,6 @@ export interface Tournament {
     open_signup: boolean
     participants_count: number
     prediction_method: number
-    predictions_opened_at: any
     private: boolean
     progress_meter: number
     pts_for_bye: string
@@ -54,10 +55,6 @@ export interface Tournament {
     rr_pts_for_match_win: string
     sequential_pairings: boolean
     show_rounds: boolean
-    signup_cap: any
-    start_at: any
-    started_at: any
-    started_checking_in_at: any
     state: string
     swiss_rounds: number
     teams: boolean
@@ -66,10 +63,8 @@ export interface Tournament {
     updated_at: string
     url: string
     description_source: string
-    subdomain: any
     full_challonge_url: string
     live_image_url: string
-    sign_up_url: any
     review_before_finalizing: boolean
     accepting_predictions: boolean
     participants_locked: boolean
@@ -77,38 +72,65 @@ export interface Tournament {
     participants_swappable: boolean
     team_convertable: boolean
     group_stages_were_started: boolean
+    matches?: MatchResponse[]
+    participants?: ParticipantResponse[]
 }
 
 export interface Participant {
     active: boolean
-    checked_in_at: any
     created_at: string
-    final_rank: any
-    group_id: any
-    icon: any
+    icon: string
     id: number
-    invitation_id: any
-    invite_email: any
-    misc: any
+    invitation_id: number
+    invite_email: string
     name: string
     on_waiting_list: boolean
     seed: number
     tournament_id: number
     updated_at: string
-    challonge_username: any
-    challonge_email_address_verified: any
+    challonge_username: string
+    challonge_email_address_verified: boolean
     removable: boolean
     participatable_or_invitation_attached: boolean
     confirm_remove: boolean
     invitation_pending: boolean
     display_name_with_invitation_email_address: string
-    email_hash: any
-    username: any
-    attached_participatable_portrait_url: any
+    email_hash: string
+    username: string
+    attached_participatable_portrait_url: string
     can_check_in: boolean
     checked_in: boolean
     reactivatable: boolean
-  }
+}
+
+export interface Match {
+    attachment_count: number
+    created_at: string
+    group_id: number
+    has_attachment: boolean
+    id: number
+    identifier: string
+    location: string
+    loser_id: number
+    player1_id: number
+    player1_is_prereq_match_loser: boolean
+    player1_prereq_match_id: number
+    player1_votes: number
+    player2_id: number
+    player2_is_prereq_match_loser: boolean
+    player2_prereq_match_id: number
+    player2_votes: number
+    round: number
+    scheduled_time: string
+    started_at: string
+    state: string
+    tournament_id: number
+    underway_at: string
+    updated_at: string
+    winner_id: number
+    prerequisite_match_ids_csv: string
+    scores_csv: string
+}
 
 /**
  * Create a new tournament
@@ -116,31 +138,31 @@ export interface Participant {
  * @see https://api.challonge.com/v1/documents/tournaments/create
  */
 export async function createTournament(name: string) {
-    logger.info(`Creating tournament ${name}...`);
+    logger.info(`Creating tournament ${name}...`)
 
-    const url = new URL('https://api.challonge.com/v1/tournaments.json');
-    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
-    url.searchParams.set('tournament[name]', name);
-    url.searchParams.set('tournament[tournament_type]', 'round robin');
-    url.searchParams.set('tournament[description]', 'Created by the Draft Bot 🤖');
-    url.searchParams.set('tournament[open_signup]', 'true');
-    url.searchParams.set('tournament[game_id]', '289'); // Magic: The Gathering
+    const url = new URL('/v1/tournaments.json', baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+    url.searchParams.set('tournament[name]', name)
+    url.searchParams.set('tournament[tournament_type]', 'round robin')
+    url.searchParams.set('tournament[description]', 'Created by the Draft Bot 🤖')
+    url.searchParams.set('tournament[open_signup]', 'true')
+    url.searchParams.set('tournament[game_id]', '289') // Magic: The Gathering
 
     try {
-        const response = await axios.post<TournamentResponse>(url.toString());
+        const response = await axios.post<TournamentResponse>(url.toString())
 
         if (response.status !== 200) {
-            logger.error(`Failed to create tournament ${name}: ${response.statusText}`);
-            throw new Error(`Failed to create tournament ${name}`);
+            logger.error(`Failed to create tournament ${name}: ${response.statusText}`)
+            throw new Error(`Failed to create tournament ${name}`)
         }
 
-        const data = response.data;
-        logger.info(`Tournament ${name} created: ${data.tournament.id}`);
+        const data = response.data
+        logger.info(`Tournament ${name} created: ${data.tournament.id}`)
 
-        return data.tournament;
+        return data.tournament
     } catch (error) {
-        handleError(error);
-        throw new Error(`Failed to create tournament ${name}`);
+        handleError(error)
+        throw new Error(`Failed to create tournament ${name}`)
     }
 }
 
@@ -150,11 +172,121 @@ export async function createTournament(name: string) {
  * @see https://api.challonge.com/v1/documents/tournaments/start
  */
 export async function startTournament(tournamentId: string) {
-    const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}/start.json`);
-    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
+    const url = new URL(`/v1/tournaments/${tournamentId}/start.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
 
-    logger.info(`Starting tournament ${tournamentId}...`);
-    await axios.post<TournamentResponse>(url.toString());
+    try {
+        logger.info(`Starting tournament ${tournamentId}...`)
+        await axios.post<TournamentResponse>(url.toString())
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to start tournament ${tournamentId}`)
+    }
+}
+
+export async function getParticipant(tournamentId: string, participantId: string) {
+    if (cache.has(`participant_${tournamentId}_${participantId}`)) {
+        return cache.get<Participant>(`participant_${tournamentId}_${participantId}`)!
+    }
+
+    const url = new URL(`/v1/tournaments/${tournamentId}/participants/${participantId}.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+
+    try {
+        logger.info(`Getting participant ${participantId} in tournament ${tournamentId}...`)
+        const response = await axios.get<ParticipantResponse>(url.toString())
+        logger.info(`Got participant ${participantId} in tournament ${tournamentId}`)
+        cache.set(`participant_${tournamentId}_${participantId}`, response.data.participant)
+        return response.data.participant
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to get participant ${participantId} in tournament ${tournamentId}`)
+    }
+}
+
+export async function getParticipants(tournamentId: string) {
+    if (cache.has(`participants_${tournamentId}`)) {
+        return cache.get<Participant[]>(`participants_${tournamentId}`)!
+    }
+
+    const url = new URL(`/v1/tournaments/${tournamentId}/participants.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+
+    try {
+        logger.info(`Getting participants for tournament ${tournamentId}...`)
+        const response = await axios.get<ParticipantResponse[]>(url.toString())
+        const participants = response.data.map((data) => data.participant)
+        logger.info(`Got ${participants.length} participants for tournament ${tournamentId}`)
+        cache.set(`participants_${tournamentId}`, participants)
+        return participants
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to get participants for tournament ${tournamentId}`)
+    }
+}
+
+export async function getMatch(tournamentId: string, matchId: string) {
+    if (cache.has(`match_${tournamentId}_${matchId}`)) {
+        return cache.get<Match>(`match_${tournamentId}_${matchId}`)!
+    }
+
+    const url = new URL(`/v1/tournaments/${tournamentId}/matches/${matchId}.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+
+    try {
+        logger.info(`Getting match ${matchId} in tournament ${tournamentId}...`)
+        const response = await axios.get<MatchResponse>(url.toString())
+        logger.info(`Got match ${matchId} in tournament ${tournamentId}`)
+        cache.set(`match_${tournamentId}_${matchId}`, response.data.match)
+        return response.data.match
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to get match ${matchId} in tournament ${tournamentId}`)
+    }
+}
+
+export async function getMatches(tournamentId: string, participantId: string) {
+    if (cache.has(`matches_${tournamentId}_${participantId}`)) {
+        return cache.get<Match[]>(`matches_${tournamentId}_${participantId}`)!
+    }
+
+    const url = new URL(`/v1/tournaments/${tournamentId}/matches.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+    url.searchParams.set('participant_id', participantId)
+
+    try {
+        logger.info(`Getting matches for tournament ${tournamentId} for participant ${participantId}...`)
+        const response = await axios.get<MatchResponse[]>(url.toString())
+        const matches = response.data.map((data) => data.match)
+        logger.info(`Got ${matches.length} matches for tournament ${tournamentId} for participant ${participantId}`)
+        cache.set(`matches_${tournamentId}_${participantId}`, matches)
+        return matches
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to get matches for tournament ${tournamentId} for participant ${participantId}`)
+    }
+}
+
+export async function recordMatch(tournamentId: number, matchId: number, playerOneId: number, playerTwoId: number, playerOneScore: number, playerTwoScore: number) {
+    let winnerId = 'tie'
+    if (playerOneScore > playerTwoScore) {
+        winnerId = playerOneId.toString()
+    } else if (playerTwoScore > playerOneScore) {
+        winnerId = playerTwoId.toString()
+    }
+
+    const url = new URL(`/v1/tournaments/${tournamentId}/matches/${matchId}.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+    url.searchParams.set('match[scores_csv]', `${playerOneScore}-${playerTwoScore}`)
+    url.searchParams.set('match[winner_id]', winnerId)
+
+    try {
+        logger.info(`Recording match ${matchId} in tournament ${tournamentId}...`)
+        await axios.put<MatchResponse>(url.toString())
+    } catch (error) {
+        handleError(error)
+        throw new Error(`Failed to record match ${matchId} in tournament ${tournamentId}`)
+    }
 }
 
 /**
@@ -162,21 +294,23 @@ export async function startTournament(tournamentId: string) {
  * @param tournamentId - The id or url of the tournament to get
  * @see https://api.challonge.com/v1/documents/tournaments/show
  */
-export async function getTournament(tournamentId: string) {
-    const cachedTournament = cache.get<Tournament>(`tournament_${tournamentId}`);
+export async function getTournament(tournamentId: string, includeParticipants = false, includeMatches = false) {
+    const cachedTournament = cache.get<Tournament>(`tournament_${tournamentId}`)
     if (cachedTournament) {
-        return cachedTournament;
+        return cachedTournament
     }
 
-    const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}.json`);
-    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
+    const url = new URL(`/v1/tournaments/${tournamentId}.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+    url.searchParams.set('include_participants', includeParticipants ? '1' : '0')
+    url.searchParams.set('include_matches', includeMatches ? '1' : '0')
 
-    logger.info(`Getting tournament ${tournamentId}...`);
-    const response = await axios.get<TournamentResponse>(url.toString());
-    const tournament = response.data.tournament;
-    cache.set(`tournament_${tournamentId}`, tournament);
-    logger.info(`Tournament ${tournamentId} got: ${tournament.name}`);
-    return tournament;
+    logger.info(`Getting tournament ${tournamentId}...`)
+    const response = await axios.get<TournamentResponse>(url.toString())
+    const tournament = response.data.tournament
+    cache.set(`tournament_${tournamentId}`, tournament)
+    logger.info(`Tournament ${tournamentId} got: ${tournament.name}`)
+    return tournament
 }
 
 /**
@@ -185,25 +319,25 @@ export async function getTournament(tournamentId: string) {
  * @see https://api.challonge.com/v1/documents/tournaments/index
  */
 export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 'ended' = 'all') {
-    const cachedTournaments = cache.get<Tournament[]>(`tournaments_${state}`);
+    const cachedTournaments = cache.get<Tournament[]>(`tournaments_${state}`)
     if (cachedTournaments) {
-        return cachedTournaments;
+        return cachedTournaments
     }
 
-    const url = new URL('https://api.challonge.com/v1/tournaments.json');
-    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
-    url.searchParams.set('state', state);
+    const url = new URL('/v1/tournaments.json', baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+    url.searchParams.set('state', state)
 
     try {
-        logger.info(`Getting tournaments in state ${state}...`);
-        const response = await axios.get<TournamentResponse[]>(url.toString());
-        const tournaments = response.data.map(data => data.tournament);
-        cache.set(`tournaments_${state}`, tournaments);
-        logger.info(`Got ${tournaments.length} tournaments in state ${state}`);
-        return tournaments;
+        logger.info(`Getting tournaments in state ${state}...`)
+        const response = await axios.get<TournamentResponse[]>(url.toString())
+        const tournaments = response.data.map((data) => data.tournament)
+        cache.set(`tournaments_${state}`, tournaments)
+        logger.info(`Got ${tournaments.length} tournaments in state ${state}`)
+        return tournaments
     } catch (error) {
-        handleError(error);
-        throw new Error('Failed to get tournaments');
+        handleError(error)
+        throw new Error('Failed to get tournaments')
     }
 }
 
@@ -214,19 +348,19 @@ export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 
  * @see https://api.challonge.com/v1/documents/tournaments/join
  */
 export async function joinTournament(tournamentId: string, participantName: string) {
-    const url = new URL(`https://api.challonge.com/v1/tournaments/${tournamentId}/participants.json`);
-    url.searchParams.set('api_key', config.CHALLONGE_API_KEY);
-    url.searchParams.set('participant[name]', participantName);
-    url.searchParams.set('participant[challonge_username]', participantName);
+    const url = new URL(`/v1/tournaments/${tournamentId}/participants.json`, baseURL)
+    url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
+    url.searchParams.set('participant[name]', participantName)
+    url.searchParams.set('participant[challonge_username]', participantName)
 
     try {
-        logger.info(`Joining tournament ${tournamentId} as ${participantName}...`);
-        const response = await axios.post<ParticipantResponse>(url.toString());
-        logger.info(`Joined tournament ${tournamentId} as ${participantName}`);
-        return response.data.participant;
+        logger.info(`Joining tournament ${tournamentId} as ${participantName}...`)
+        const response = await axios.post<ParticipantResponse>(url.toString())
+        logger.info(`Joined tournament ${tournamentId} as ${participantName}`)
+        return response.data.participant
     } catch (error) {
-        handleError(error);
-        throw new Error(`Failed to join tournament ${tournamentId}`);
+        handleError(error)
+        throw new Error(`Failed to join tournament ${tournamentId}`)
     }
 }
 
@@ -236,25 +370,25 @@ export async function joinTournament(tournamentId: string, participantName: stri
  */
 function handleError(error: unknown) {
     if (!axios.isAxiosError(error)) {
-        logger.error(error);
-        return;
+        logger.error(error)
+        return
     }
 
     if (error.response) {
         // The request was made and the server responded with a status code
         // that falls out of the range of 2xx
-        logger.error(error.response.data);
-        logger.error(error.response.status);
-        logger.error(error.response.headers);
+        logger.error(error.response.data)
+        logger.error(error.response.status)
+        logger.error(error.response.headers)
     } else if (error.request) {
         // The request was made but no response was received
         // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
         // http.ClientRequest in node.js
-        logger.error(error.request);
+        logger.error(error.request)
     } else {
         // Something happened in setting up the request that triggered an Error
-        logger.error('Error', error.message);
+        logger.error('Error', error.message)
     }
 
-    logger.error(error.config);
+    logger.error(error.config)
 }
