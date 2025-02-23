@@ -54,7 +54,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
     }
 
     const tournaments = await getTournaments('in_progress')
-    const filtered = tournaments.filter((tournament) => tournament.name.startsWith(focusedOption.value))
+    const filtered = tournaments.filter((tournament) => tournament.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
     await interaction.respond(
         filtered.map((tournament) => ({
             name: tournament.name,

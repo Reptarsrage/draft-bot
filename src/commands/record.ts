@@ -55,18 +55,25 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
     const focusedOption = interaction.options.getFocused(true)
+    const lValue = focusedOption.value.toLowerCase()
+
     if (focusedOption.name === 'tournament') {
         const tournaments = await getTournaments('in_progress')
-        const filtered = tournaments.filter((tournament) => tournament.name.startsWith(focusedOption.value))
+        const filtered = tournaments.filter((tournament) => tournament.name.toLowerCase().startsWith(lValue))
         await interaction.respond(filtered.map((tournament) => ({ name: tournament.name, value: tournament.id.toString() })))
         return
     }
 
     if (focusedOption.name === 'player') {
         const tournamentId = +interaction.options.getString('tournament', true)
+        const lUserName = interaction.user.username.toLowerCase()
         const participants = await getParticipants(tournamentId)
-        const filtered = participants.filter((participant) => participant.name.startsWith(focusedOption.value) && participant.name !== interaction.user.username)
-        await interaction.respond(filtered.map((participant) => ({ name: participant.name, value: participant.id.toString() })))
+        const filtered = participants.filter((participant) => {
+            const lName = participant.display_name.toLowerCase()
+            return lName.startsWith(lValue) && lName !== lUserName
+        })
+
+        await interaction.respond(filtered.map((participant) => ({ name: participant.display_name, value: participant.id.toString() })))
         return
     }
 

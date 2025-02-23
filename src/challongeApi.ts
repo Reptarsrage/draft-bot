@@ -98,6 +98,7 @@ export interface Participant {
     display_name_with_invitation_email_address: string
     email_hash: string
     username: string
+    display_name: string
     attached_participatable_portrait_url: string
     can_check_in: boolean
     checked_in: boolean
