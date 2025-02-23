@@ -9,6 +9,7 @@ import * as joinCommand from './commands/join'
 import * as startCommand from './commands/start'
 import * as recordCommand from './commands/record'
 import * as endCommand from './commands/end'
+import * as resultsCommand from './commands/results'
 
 export type SlashCommand = {
     data: SlashCommandBuilder | SlashCommandOptionsOnlyBuilder
@@ -16,7 +17,7 @@ export type SlashCommand = {
     autocomplete?: (interaction: AutocompleteInteraction) => Promise<void>
 }
 
-export const commands: SlashCommand[] = [pingCommand, createCommand, joinCommand, startCommand, recordCommand, endCommand]
+export const commands: SlashCommand[] = [pingCommand, createCommand, joinCommand, startCommand, recordCommand, endCommand, resultsCommand]
 
 /**
  * Register the slash commands

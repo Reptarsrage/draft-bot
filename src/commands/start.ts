@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, type ChatInputCommandInteraction, EmbedBuilder, type AutocompleteInteraction } from 'discord.js'
+import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
 import { getTournaments, startTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
+import getEmbedBuilder from '../embedBuilder'
 
 export const data = new SlashCommandBuilder()
     .setName('start')
@@ -8,15 +9,15 @@ export const data = new SlashCommandBuilder()
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const name = interaction.options.getString('draft', true)
+    const tournamentId = +interaction.options.getString('draft', true)
 
-    const tournament = await getTournament(name)
-    await startTournament(tournament.id.toString())
+    const tournament = await getTournament(tournamentId)
+    await startTournament(tournament.id)
 
     const draftUrl = `https://draftmancer.com/?session=${tournament.id}`
 
-    const exampleEmbed = new EmbedBuilder()
-        .setTitle(`Tournament ${tournament.name} started!`)
+    const exampleEmbed = getEmbedBuilder()
+        .setTitle(`${tournament.name} started!`)
         .setDescription(`Generated draft URL: ${draftUrl}`)
         .setURL(tournament.full_challonge_url)
         .setImage(tournament.live_image_url)

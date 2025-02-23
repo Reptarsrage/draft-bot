@@ -172,7 +172,7 @@ export async function createTournament(name: string) {
  * @param tournamentId - The id of the tournament to start
  * @see https://api.challonge.com/v1/documents/tournaments/start
  */
-export async function startTournament(tournamentId: string) {
+export async function startTournament(tournamentId: number) {
     const url = new URL(`/v1/tournaments/${tournamentId}/start.json`, baseURL)
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
 
@@ -190,7 +190,7 @@ export async function startTournament(tournamentId: string) {
  * @param tournamentId - The id of the tournament to end
  * @see https://api.challonge.com/v1/documents/tournaments/end
  */
-export async function endTournament(tournamentId: string) {
+export async function endTournament(tournamentId: number) {
     const url = new URL(`/v1/tournaments/${tournamentId}/finalize.json`, baseURL)
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
 
@@ -203,7 +203,7 @@ export async function endTournament(tournamentId: string) {
     }
 }
 
-export async function getParticipant(tournamentId: string, participantId: string) {
+export async function getParticipant(tournamentId: number, participantId: number) {
     if (cache.has(`participant_${tournamentId}_${participantId}`)) {
         return cache.get<Participant>(`participant_${tournamentId}_${participantId}`)!
     }
@@ -223,7 +223,7 @@ export async function getParticipant(tournamentId: string, participantId: string
     }
 }
 
-export async function getParticipants(tournamentId: string) {
+export async function getParticipants(tournamentId: number) {
     if (cache.has(`participants_${tournamentId}`)) {
         return cache.get<Participant[]>(`participants_${tournamentId}`)!
     }
@@ -244,7 +244,7 @@ export async function getParticipants(tournamentId: string) {
     }
 }
 
-export async function getMatch(tournamentId: string, matchId: string) {
+export async function getMatch(tournamentId: number, matchId: number) {
     if (cache.has(`match_${tournamentId}_${matchId}`)) {
         return cache.get<Match>(`match_${tournamentId}_${matchId}`)!
     }
@@ -264,14 +264,14 @@ export async function getMatch(tournamentId: string, matchId: string) {
     }
 }
 
-export async function getMatches(tournamentId: string, participantId: string) {
+export async function getMatches(tournamentId: number, participantId: number) {
     if (cache.has(`matches_${tournamentId}_${participantId}`)) {
         return cache.get<Match[]>(`matches_${tournamentId}_${participantId}`)!
     }
 
     const url = new URL(`/v1/tournaments/${tournamentId}/matches.json`, baseURL)
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
-    url.searchParams.set('participant_id', participantId)
+    url.searchParams.set('participant_id', participantId.toString())
 
     try {
         logger.info(`Getting matches for tournament ${tournamentId} for participant ${participantId}...`)
@@ -313,7 +313,7 @@ export async function recordMatch(tournamentId: number, matchId: number, playerO
  * @param tournamentId - The id or url of the tournament to get
  * @see https://api.challonge.com/v1/documents/tournaments/show
  */
-export async function getTournament(tournamentId: string, includeParticipants = false, includeMatches = false) {
+export async function getTournament(tournamentId: number, includeParticipants = false, includeMatches = false) {
     const cachedTournament = cache.get<Tournament>(`tournament_${tournamentId}`)
     if (cachedTournament) {
         return cachedTournament
@@ -366,7 +366,7 @@ export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 
  * @param participantName - The name of the participant to join
  * @see https://api.challonge.com/v1/documents/tournaments/join
  */
-export async function joinTournament(tournamentId: string, participantName: string) {
+export async function joinTournament(tournamentId: number, participantName: string) {
     const url = new URL(`/v1/tournaments/${tournamentId}/participants.json`, baseURL)
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
     url.searchParams.set('participant[name]', participantName)

@@ -1,11 +1,11 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
-import { getTournaments, endTournament, getTournament } from '../challongeApi'
+import { getTournaments, getTournament } from '../challongeApi'
 import logger from '../logger'
 import getEmbedBuilder from '../embedBuilder'
 import calculateStandings from '../standingCalculator'
 
 export const data = new SlashCommandBuilder()
-    .setName('end')
+    .setName('results')
     .setDescription('Finalize the draft')
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
@@ -13,7 +13,6 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const tournamentId = +interaction.options.getString('draft', true)
 
     const tournament = await getTournament(tournamentId, true, true)
-    await endTournament(tournament.id)
 
     const standings = await calculateStandings(tournamentId)
 
@@ -21,7 +20,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const placements = ['1st', '2nd', '3rd']
 
     const winners = standings
-        .filter((standing) => standing.rank <= 1)
+        .filter((standing) => standing.rank <= 2)
         .map(({ name, wins, losses, ties, rank }) => {
             const award = awards[Math.min(rank, awards.length - 1)]
             const placement = placements[Math.min(rank, placements.length - 1)]
@@ -30,7 +29,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         .join('\n')
 
     const participated = standings
-        .filter((standing) => standing.rank > 1)
+        .filter((standing) => standing.rank > 2)
         .map(({ name, wins, losses, ties }) => {
             return `${name} (${wins}-${losses}-${ties})`
         })
@@ -53,7 +52,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return []
     }
 
-    const tournaments = await getTournaments('in_progress')
+    const tournaments = await getTournaments('ended')
     const filtered = tournaments.filter((tournament) => tournament.name.startsWith(focusedOption.value))
     await interaction.respond(
         filtered.map((tournament) => ({

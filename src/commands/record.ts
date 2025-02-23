@@ -1,7 +1,8 @@
-import { SlashCommandBuilder, type ChatInputCommandInteraction, EmbedBuilder, type AutocompleteInteraction } from 'discord.js'
+import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
 import { getTournaments, getTournament, getParticipants, recordMatch } from '../challongeApi'
 import logger from '../logger'
 import invariant from 'tiny-invariant'
+import getEmbedBuilder from '../embedBuilder'
 
 export const data = new SlashCommandBuilder()
     .setName('record')
@@ -12,7 +13,7 @@ export const data = new SlashCommandBuilder()
     .addNumberOption((option) => option.setName('losses').setDescription('Number of losses').setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const tournamentId = interaction.options.getString('tournament', true)
+    const tournamentId = +interaction.options.getString('tournament', true)
     const playerOneName = interaction.user.username
     const playerTwoId = interaction.options.getString('player', true)
     const wins = interaction.options.getNumber('wins', true)
@@ -45,7 +46,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         result = 'lost'
     }
 
-    const exampleEmbed = new EmbedBuilder()
+    const exampleEmbed = getEmbedBuilder()
         .setTitle(`Player ${playerOneName} ${result} (${wins} - ${losses}) against ${playerTwoParticipant.participant.name}`)
         .setURL(tournament.full_challonge_url)
 
@@ -62,7 +63,7 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
     }
 
     if (focusedOption.name === 'player') {
-        const tournamentId = interaction.options.getString('tournament', true)
+        const tournamentId = +interaction.options.getString('tournament', true)
         const participants = await getParticipants(tournamentId)
         const filtered = participants.filter((participant) => participant.name.startsWith(focusedOption.value) && participant.name !== interaction.user.username)
         await interaction.respond(filtered.map((participant) => ({ name: participant.name, value: participant.id.toString() })))

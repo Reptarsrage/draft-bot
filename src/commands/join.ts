@@ -1,6 +1,7 @@
-import { SlashCommandBuilder, type ChatInputCommandInteraction, EmbedBuilder, type AutocompleteInteraction } from 'discord.js'
+import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
 import { getTournaments, joinTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
+import getEmbedBuilder from '../embedBuilder'
 
 export const data = new SlashCommandBuilder()
     .setName('join')
@@ -8,15 +9,16 @@ export const data = new SlashCommandBuilder()
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const name = interaction.options.getString('draft', true)
+    const tournamentId = +interaction.options.getString('draft', true)
 
-    const tournament = await getTournament(name)
-    const participant = await joinTournament(tournament.id.toString(), interaction.user.username)
+    const tournament = await getTournament(tournamentId)
+    const participant = await joinTournament(tournament.id, interaction.user.username)
 
-    const exampleEmbed = new EmbedBuilder()
-        .setTitle(`User ${participant.challonge_username} joined ${tournament.name}`)
+    const exampleEmbed = getEmbedBuilder()
+        .setTitle(`${participant.challonge_username} joined ${tournament.name}!`)
         .setURL(tournament.full_challonge_url)
         .setImage(participant.attached_participatable_portrait_url)
+        .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')
 
     await interaction.reply({ embeds: [exampleEmbed] })
 }
