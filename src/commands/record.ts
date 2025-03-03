@@ -21,11 +21,11 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const tournament = await getTournament(tournamentId, true, true)
 
-    const playerOneParticipant = tournament.participants?.find(({ participant }) => participant.name === playerOneName)
-    invariant(playerOneParticipant, `Player ${playerOneName} not found in tournament ${tournamentId}`)
+    const playerOneParticipant = tournament.participants?.find(({ participant }) => playerOneName.localeCompare(participant.name, undefined, { sensitivity: 'accent' }) === 0)
+    invariant(playerOneParticipant, `Player ${playerOneName} not found in tournament ${tournament.name}`)
 
     const playerTwoParticipant = tournament.participants?.find(({ participant }) => participant.id.toString() === playerTwoId)
-    invariant(playerTwoParticipant, `Player ${playerTwoId} not found in tournament ${tournamentId}`)
+    invariant(playerTwoParticipant, `Player ${playerTwoId} not found in tournament ${tournament.name}`)
 
     const match = tournament.matches?.find(
         ({ match }) =>
