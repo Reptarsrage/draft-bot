@@ -7,15 +7,18 @@ export const data = new SlashCommandBuilder()
     .setName('join')
     .setDescription('Join the draft')
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
+    .addStringOption((option) => option.setName('username').setDescription('Your Challonge username (optional)').setRequired(false))
+    .addStringOption((option) => option.setName('email').setDescription('Your Challonge email (optional)').setRequired(false))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     const tournamentId = +interaction.options.getString('draft', true)
-
+    const challongeUsername = interaction.options.getString('username', false)
+    const challongeEmail = interaction.options.getString('email', false)
     const tournament = await getTournament(tournamentId)
-    const participant = await joinTournament(tournament.id, interaction.user.username)
+    const participant = await joinTournament(tournament.id, interaction.user.username, challongeUsername, challongeEmail)
 
     const exampleEmbed = getEmbedBuilder()
-        .setTitle(`${participant.challonge_username} joined ${tournament.name}!`)
+        .setTitle(`${participant.challonge_username ?? participant.name} joined ${tournament.name}!`)
         .setURL(tournament.full_challonge_url)
         .setImage(participant.attached_participatable_portrait_url)
         .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')

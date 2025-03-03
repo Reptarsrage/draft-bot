@@ -365,13 +365,21 @@ export async function getTournaments(state: 'all' | 'pending' | 'in_progress' | 
  * Join a tournament
  * @param tournamentId - The id or url of the tournament to join
  * @param participantName - The name of the participant to join
- * @see https://api.challonge.com/v1/documents/tournaments/join
+ * @param username - The username of the participant to join
+ * @see https://api.challonge.com/v1/documents/participants/create
  */
-export async function joinTournament(tournamentId: number, participantName: string) {
+export async function joinTournament(tournamentId: number, participantName: string, challongeUsername: string | null = null, challongeEmail: string | null = null) {
     const url = new URL(`/v1/tournaments/${tournamentId}/participants.json`, baseURL)
     url.searchParams.set('api_key', config.CHALLONGE_API_KEY)
     url.searchParams.set('participant[name]', participantName)
-    url.searchParams.set('participant[challonge_username]', participantName)
+
+    if (challongeUsername) {
+        url.searchParams.set('participant[challonge_username]', challongeUsername)
+    }
+
+    if (challongeEmail) {
+        url.searchParams.set('participant[email]', challongeEmail)
+    }
 
     try {
         logger.info(`Joining tournament ${tournamentId} as ${participantName}...`)
