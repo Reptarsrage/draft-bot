@@ -8,21 +8,22 @@ export const data = new SlashCommandBuilder()
     .setName('record')
     .setDescription('Record a match')
     .addStringOption((option) => option.setName('tournament').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
-    .addStringOption((option) => option.setName('player').setDescription('The name of your opponent').setAutocomplete(true).setRequired(true))
+    .addStringOption((option) => option.setName('playerOne').setDescription('Player one name').setAutocomplete(true).setRequired(true))
+    .addStringOption((option) => option.setName('playerTwo').setDescription('Player two name').setAutocomplete(true).setRequired(true))
     .addNumberOption((option) => option.setName('wins').setDescription('Number of wins').setRequired(true))
     .addNumberOption((option) => option.setName('losses').setDescription('Number of losses').setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     const tournamentId = +interaction.options.getString('tournament', true)
-    const playerOneName = interaction.user.username
-    const playerTwoId = interaction.options.getString('player', true)
+    const playerOneId = interaction.options.getString('playerOne', true)
+    const playerTwoId = interaction.options.getString('playerTwo', true)
     const wins = interaction.options.getNumber('wins', true)
     const losses = interaction.options.getNumber('losses', true)
 
     const tournament = await getTournament(tournamentId, true, true)
 
-    const playerOneParticipant = tournament.participants?.find(({ participant }) => playerOneName.localeCompare(participant.name, undefined, { sensitivity: 'accent' }) === 0)
-    invariant(playerOneParticipant, `Player ${playerOneName} not found in tournament ${tournament.name}`)
+    const playerOneParticipant = tournament.participants?.find(({ participant }) => participant.id.toString() === playerOneId)
+    invariant(playerOneParticipant, `Player ${playerOneId} not found in tournament ${tournament.name}`)
 
     const playerTwoParticipant = tournament.participants?.find(({ participant }) => participant.id.toString() === playerTwoId)
     invariant(playerTwoParticipant, `Player ${playerTwoId} not found in tournament ${tournament.name}`)
@@ -34,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     )
 
     if (!match) {
-        throw new Error(`No match found between ${playerOneName} and ${playerTwoParticipant.participant.name} in tournament ${tournamentId}`)
+        throw new Error(`No match found between ${playerOneParticipant.participant.name} and ${playerTwoParticipant.participant.name} in tournament ${tournamentId}`)
     }
 
     await recordMatch(tournament.id, match.match.id, playerOneParticipant.participant.id, playerTwoParticipant.participant.id, wins, losses)
@@ -47,7 +48,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const exampleEmbed = getEmbedBuilder()
-        .setTitle(`Player ${playerOneName} ${result} (${wins} - ${losses}) against ${playerTwoParticipant.participant.name}`)
+        .setTitle(`Player ${playerOneParticipant.participant.name} ${result} (${wins} - ${losses}) against ${playerTwoParticipant.participant.name}`)
         .setURL(tournament.full_challonge_url)
 
     await interaction.reply({ embeds: [exampleEmbed] })
@@ -64,14 +65,21 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return
     }
 
-    if (focusedOption.name === 'player') {
+    if (focusedOption.name === 'playerOne' || focusedOption.name === 'playerTwo') {
         const tournamentId = +interaction.options.getString('tournament', true)
-        const lUserName = interaction.user.username.toLowerCase()
         const participants = await getParticipants(tournamentId)
-        const filtered = participants.filter((participant) => {
-            const lName = participant.display_name.toLowerCase()
-            return lName.startsWith(lValue) && lName !== lUserName
-        })
+        let filtered = participants
+        if (focusedOption.name === 'playerTwo') {
+            const playerOneId = interaction.options.getString('playerOne', false)
+            if (playerOneId) {
+                filtered = filtered.filter((participant) => participant.id.toString() !== playerOneId)
+            }
+        } else if (focusedOption.name === 'playerOne') {
+            const playerTwoId = interaction.options.getString('playerTwo', false)
+            if (playerTwoId) {
+                filtered = filtered.filter((participant) => participant.id.toString() !== playerTwoId)
+            }
+        }
 
         await interaction.respond(filtered.map((participant) => ({ name: participant.display_name, value: participant.id.toString() })))
         return
