@@ -314,9 +314,9 @@ export async function recordMatch(tournamentId: number, matchId: number, playerO
  * @param tournamentId - The id or url of the tournament to get
  * @see https://api.challonge.com/v1/documents/tournaments/show
  */
-export async function getTournament(tournamentId: number, includeParticipants = false, includeMatches = false) {
+export async function getTournament(tournamentId: number, includeParticipants = false, includeMatches = false, bypassCache = false) {
     const cachedTournament = cache.get<Tournament>(`tournament_${tournamentId}`)
-    if (cachedTournament) {
+    if (cachedTournament && !bypassCache) {
         return cachedTournament
     }
 

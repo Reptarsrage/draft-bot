@@ -43,7 +43,7 @@ function compareStandings(a: Standing, b: Standing, whoBeatWho: Record<number, n
 }
 
 export default async function calculateStandings(tournamentId: number) {
-    const tournament = await getTournament(tournamentId, true, true)
+    const tournament = await getTournament(tournamentId, true, true, true)
     const { participants = [], matches = [], pts_for_match_win, pts_for_match_tie, pts_for_game_win } = tournament
     const ptsForMatchWin = parseFloat(pts_for_match_win)
     const ptsForMatchTie = parseFloat(pts_for_match_tie)
