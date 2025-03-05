@@ -21,7 +21,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const placements = ['1st', '2nd', '3rd']
 
     const winners = standings
-        .filter((standing) => standing.rank <= 1)
+        .filter((standing) => standing.rank <= 2)
         .map(({ name, wins, losses, ties, rank }) => {
             const award = awards[Math.min(rank, awards.length - 1)]
             const placement = placements[Math.min(rank, placements.length - 1)]
@@ -30,7 +30,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         .join('\n')
 
     const participated = standings
-        .filter((standing) => standing.rank > 1)
+        .filter((standing) => standing.rank > 2)
         .map(({ name, wins, losses, ties }) => {
             return `🏆 ${name} (${wins}-${losses}-${ties})`
         })

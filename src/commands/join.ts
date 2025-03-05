@@ -18,7 +18,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const participant = await joinTournament(tournament.id, interaction.user.username, challongeUsername, challongeEmail)
 
     const exampleEmbed = getEmbedBuilder()
-        .setTitle(`${participant.challonge_username ?? participant.name} joined ${tournament.name}!`)
+        .setTitle(`${participant.display_name} joined ${tournament.name}!`)
         .setURL(tournament.full_challonge_url)
         .setImage(participant.attached_participatable_portrait_url)
         .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')

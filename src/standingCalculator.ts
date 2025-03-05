@@ -54,7 +54,7 @@ export default async function calculateStandings(tournamentId: number) {
     for (const participant of participants) {
         standings.push({
             id: participant.participant.id,
-            name: participant.participant.name,
+            name: participant.participant.display_name,
             wins: 0,
             losses: 0,
             ties: 0,

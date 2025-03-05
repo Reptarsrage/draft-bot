@@ -35,7 +35,9 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     )
 
     if (!match) {
-        throw new Error(`No match found between ${playerOneParticipant.participant.name} and ${playerTwoParticipant.participant.name} in tournament ${tournamentId}`)
+        throw new Error(
+            `No match found between ${playerOneParticipant.participant.display_name} and ${playerTwoParticipant.participant.display_name} in tournament ${tournamentId}`
+        )
     }
 
     await recordMatch(tournament.id, match.match.id, playerOneParticipant.participant.id, playerTwoParticipant.participant.id, wins, losses)
@@ -48,7 +50,7 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     }
 
     const exampleEmbed = getEmbedBuilder()
-        .setTitle(`Player ${playerOneParticipant.participant.name} ${result} (${wins} - ${losses}) against ${playerTwoParticipant.participant.name}`)
+        .setTitle(`Player ${playerOneParticipant.participant.display_name} ${result} (${wins} - ${losses}) against ${playerTwoParticipant.participant.display_name}`)
         .setURL(tournament.full_challonge_url)
 
     await interaction.reply({ embeds: [exampleEmbed] })
