@@ -8,15 +8,15 @@ export const data = new SlashCommandBuilder()
     .setName('record')
     .setDescription('Record a match')
     .addStringOption((option) => option.setName('tournament').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
-    .addStringOption((option) => option.setName('playerOne').setDescription('Player one name').setAutocomplete(true).setRequired(true))
-    .addStringOption((option) => option.setName('playerTwo').setDescription('Player two name').setAutocomplete(true).setRequired(true))
+    .addStringOption((option) => option.setName('player-one').setDescription('Player one name').setAutocomplete(true).setRequired(true))
+    .addStringOption((option) => option.setName('player-two').setDescription('Player two name').setAutocomplete(true).setRequired(true))
     .addNumberOption((option) => option.setName('wins').setDescription('Number of wins').setRequired(true))
     .addNumberOption((option) => option.setName('losses').setDescription('Number of losses').setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     const tournamentId = +interaction.options.getString('tournament', true)
-    const playerOneId = interaction.options.getString('playerOne', true)
-    const playerTwoId = interaction.options.getString('playerTwo', true)
+    const playerOneId = interaction.options.getString('player-one', true)
+    const playerTwoId = interaction.options.getString('player-two', true)
     const wins = interaction.options.getNumber('wins', true)
     const losses = interaction.options.getNumber('losses', true)
 
@@ -65,19 +65,19 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return
     }
 
-    if (focusedOption.name === 'playerOne' || focusedOption.name === 'playerTwo') {
+    if (focusedOption.name === 'player-one' || focusedOption.name === 'player-two') {
         const tournamentId = +interaction.options.getString('tournament', true)
         const participants = await getParticipants(tournamentId)
         let filtered = participants
-        if (focusedOption.name === 'playerTwo') {
-            const playerOneId = interaction.options.getString('playerOne', false)
-            if (playerOneId) {
-                filtered = filtered.filter((participant) => participant.id.toString() !== playerOneId)
-            }
-        } else if (focusedOption.name === 'playerOne') {
-            const playerTwoId = interaction.options.getString('playerTwo', false)
+        if (focusedOption.name === 'player-one') {
+            const playerTwoId = interaction.options.getString('player-two', false)
             if (playerTwoId) {
                 filtered = filtered.filter((participant) => participant.id.toString() !== playerTwoId)
+            }
+        } else if (focusedOption.name === 'player-two') {
+            const playerOneId = interaction.options.getString('player-one', false)
+            if (playerOneId) {
+                filtered = filtered.filter((participant) => participant.id.toString() !== playerOneId)
             }
         }
 
