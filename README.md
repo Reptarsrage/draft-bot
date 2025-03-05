@@ -17,7 +17,7 @@ docker run -d \
   -e "DISCORD_APP_ID=1342958919814877194" \
   -e "DISCORD_TOKEN=<SECRET>" \
   -e "CHALLONGE_API_KEY=<SECRET>" \
-  -e "NODE_ENV=development" \
+  -e "NODE_ENV=production" \
   -e "DISCORD_PUBLIC_KEY=<SECRET>" \
   draft-bot:latest
 ```
