@@ -10,8 +10,8 @@ export const data = new SlashCommandBuilder()
     .addStringOption((option) => option.setName('tournament').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
     .addStringOption((option) => option.setName('player-one').setDescription('Player one name').setAutocomplete(true).setRequired(true))
     .addStringOption((option) => option.setName('player-two').setDescription('Player two name').setAutocomplete(true).setRequired(true))
-    .addNumberOption((option) => option.setName('wins').setDescription('Number of wins').setRequired(true))
-    .addNumberOption((option) => option.setName('losses').setDescription('Number of losses').setRequired(true))
+    .addNumberOption((option) => option.setName('wins').setDescription('Player one wins').setRequired(true))
+    .addNumberOption((option) => option.setName('losses').setDescription('Player one losses').setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
     const tournamentId = +interaction.options.getString('tournament', true)
