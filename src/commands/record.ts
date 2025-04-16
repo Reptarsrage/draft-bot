@@ -40,7 +40,12 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         )
     }
 
-    await recordMatch(tournament.id, match.match.id, playerOneParticipant.participant.id, playerTwoParticipant.participant.id, wins, losses)
+    const isReverse = match.match.player1_id === playerTwoParticipant.participant.id && match.match.player2_id === playerOneParticipant.participant.id
+    if (isReverse) {
+        await recordMatch(tournament.id, match.match.id, playerTwoParticipant.participant.id, playerOneParticipant.participant.id, losses, wins)
+    } else {
+        await recordMatch(tournament.id, match.match.id, playerOneParticipant.participant.id, playerTwoParticipant.participant.id, wins, losses)
+    }
 
     let result = 'tied'
     if (wins > losses) {
