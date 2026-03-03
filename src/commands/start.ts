@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
-import { getTournaments, startTournament, getTournament } from '../challongeApi'
+import { listTournaments, startTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
 import getEmbedBuilder from '../embedBuilder'
 
@@ -9,20 +9,20 @@ export const data = new SlashCommandBuilder()
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const tournamentId = +interaction.options.getString('draft', true)
+    const tournamentId = interaction.options.getString('draft', true)
 
     const tournament = await getTournament(tournamentId)
-    await startTournament(tournament.id)
+    await startTournament(tournament.data.id)
 
-    const draftUrl = `https://draftmancer.com/?session=${tournament.id}`
+    const draftUrl = `https://draftmancer.com/?session=${tournament.data.id}`
 
-    const exampleEmbed = getEmbedBuilder()
-        .setTitle(`${tournament.name} started!`)
+    const ebmed = getEmbedBuilder()
+        .setTitle(`${tournament.data.attributes.name} started!`)
         .setDescription(`Generated draft URL: ${draftUrl}`)
-        .setURL(tournament.full_challonge_url)
-        .setImage(tournament.live_image_url)
+        .setURL(tournament.data.attributes.full_challonge_url)
+        .setImage(tournament.data.attributes.live_image_url)
 
-    await interaction.reply({ embeds: [exampleEmbed] })
+    await interaction.reply({ embeds: [ebmed] })
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
@@ -32,12 +32,12 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return []
     }
 
-    const tournaments = await getTournaments('pending')
-    const filtered = tournaments.filter((tournament) => tournament.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
+    const tournaments = await listTournaments('pending')
+    const filtered = tournaments.data.filter((tournament) => tournament.attributes.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
     await interaction.respond(
         filtered.map((tournament) => ({
-            name: tournament.name,
-            value: tournament.id.toString(),
+            name: tournament.attributes.name,
+            value: tournament.id,
         }))
     )
 }

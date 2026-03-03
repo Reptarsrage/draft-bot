@@ -15,7 +15,7 @@ for (const command of commands) {
 export default async function startBot() {
     const client = new Client({ intents: [GatewayIntentBits.Guilds] })
 
-    client.on('ready', () => {
+    client.on('clientReady', () => {
         logger.info(`Logged in as ${client.user?.tag}!`)
     })
 

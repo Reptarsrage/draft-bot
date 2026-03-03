@@ -14,9 +14,8 @@ export async function execute(interaction: ChatInputCommandInteraction) {
 
     const exampleEmbed = getEmbedBuilder()
         .setTitle(`${name} created!`)
-        .setURL(tourney.full_challonge_url)
-        .setDescription(`Use the \`/join\` command to join the draft or go to ${tourney.sign_up_url}`)
-        .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')
+        .setURL(tourney.data.attributes.full_challonge_url)
+        .setDescription(`Use the \`/join\` command to join the draft or go to ${tourney.data.attributes.sign_up_url}`)
 
     await interaction.reply({ embeds: [exampleEmbed] })
 }

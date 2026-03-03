@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
-import { getTournaments, endTournament, getTournament } from '../challongeApi'
+import { listTournaments, endTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
 import getEmbedBuilder from '../embedBuilder'
 import calculateStandings from '../standingCalculator'
@@ -10,11 +10,9 @@ export const data = new SlashCommandBuilder()
     .addStringOption((option) => option.setName('draft').setDescription('The name of the draft').setAutocomplete(true).setRequired(true))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const tournamentId = +interaction.options.getString('draft', true)
+    const tournamentId = interaction.options.getString('draft', true)
 
-    const tournament = await getTournament(tournamentId, true, true)
-    await endTournament(tournament.id)
-
+    const [tournament] = await Promise.all([getTournament(tournamentId), endTournament(tournamentId)])
     const standings = await calculateStandings(tournamentId)
 
     const awards = ['🥇', '🥈', '🥉']
@@ -36,18 +34,17 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         })
         .join('\n')
 
-    const exampleEmbed = getEmbedBuilder()
-        .setTitle(`${tournament.name} ended!`)
+    const embed = getEmbedBuilder()
+        .setTitle(`${tournament.data.attributes.name} ended!`)
         .addFields({ name: 'Standings', value: winners })
-        .setURL(tournament.full_challonge_url)
-        .setImage(tournament.live_image_url)
-        .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')
+        .setURL(tournament.data.attributes.full_challonge_url)
+        .setImage(tournament.data.attributes.live_image_url)
 
     if (participated.length > 0) {
-        exampleEmbed.addFields({ name: 'Received a participation trophy', value: participated })
+        embed.addFields({ name: 'Received a participation trophy', value: participated })
     }
 
-    await interaction.reply({ embeds: [exampleEmbed] })
+    await interaction.reply({ embeds: [embed] })
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
@@ -57,12 +54,12 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return []
     }
 
-    const tournaments = await getTournaments('in_progress')
-    const filtered = tournaments.filter((tournament) => tournament.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
+    const tournaments = await listTournaments('in_progress')
+    const filtered = tournaments.data.filter((tournament) => tournament.attributes.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
     await interaction.respond(
         filtered.map((tournament) => ({
-            name: tournament.name,
-            value: tournament.id.toString(),
+            name: tournament.attributes.name,
+            value: tournament.id,
         }))
     )
 }

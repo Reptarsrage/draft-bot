@@ -7,5 +7,6 @@ import { EmbedBuilder } from 'discord.js'
 export default function getEmbedBuilder() {
     return new EmbedBuilder()
         .setColor('#E1AA2D')
+        .setTimestamp()
         .setFooter({ text: 'Brought to you by Draft Bot™', iconURL: 'https://cdn.discordapp.com/app-icons/1342958919814877194/f3338f874c220c3a5e2d0fd0e986d073.png?size=256' })
 }

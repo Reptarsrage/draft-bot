@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, type ChatInputCommandInteraction, type AutocompleteInteraction } from 'discord.js'
-import { getTournaments, joinTournament, getTournament } from '../challongeApi'
+import { listTournaments, joinTournament, getTournament, listParticipants } from '../challongeApi'
 import logger from '../logger'
 import getEmbedBuilder from '../embedBuilder'
 
@@ -11,19 +11,24 @@ export const data = new SlashCommandBuilder()
     .addStringOption((option) => option.setName('email').setDescription('Your Challonge email (optional)').setRequired(false))
 
 export async function execute(interaction: ChatInputCommandInteraction) {
-    const tournamentId = +interaction.options.getString('draft', true)
+    const tournamentId = interaction.options.getString('draft', true)
     const challongeUsername = interaction.options.getString('username', false)
     const challongeEmail = interaction.options.getString('email', false)
-    const tournament = await getTournament(tournamentId)
-    const participant = await joinTournament(tournament.id, interaction.user.username, challongeUsername, challongeEmail)
+    const participant = await joinTournament(tournamentId, interaction.user.username, challongeUsername, challongeEmail)
+    const [tournament, participants] = await Promise.all([getTournament(tournamentId), listParticipants(tournamentId)])
+    const profile = findProfile(participant)
 
-    const exampleEmbed = getEmbedBuilder()
-        .setTitle(`${participant.display_name} joined ${tournament.name}!`)
-        .setURL(tournament.full_challonge_url)
-        .setImage(participant.attached_participatable_portrait_url)
-        .setThumbnail('https://assets.challonge.com/_next/static/media/logo-symbol-only.8b0dbfc7.svg')
+    const embed = getEmbedBuilder()
+        .setTitle(`${participant.data.attributes.name} joined ${tournament.data.attributes.name}!`)
+        .setURL(tournament.data.attributes.full_challonge_url)
+        .setDescription(`${participants.data.length} have joined the draft so far`)
+        .addFields({ name: 'Participants', value: participants.data.map((participant) => participant.attributes.name).join('\n'), inline: true })
 
-    await interaction.reply({ embeds: [exampleEmbed] })
+    if (profile) {
+        embed.setThumbnail(profile.attributes.image_url)
+    }
+
+    await interaction.reply({ embeds: [embed] })
 }
 
 export async function autocomplete(interaction: AutocompleteInteraction) {
@@ -33,12 +38,16 @@ export async function autocomplete(interaction: AutocompleteInteraction) {
         return []
     }
 
-    const tournaments = await getTournaments('pending')
-    const filtered = tournaments.filter((tournament) => tournament.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
+    const tournaments = await listTournaments('pending')
+    const filtered = tournaments.data.filter((tournament) => tournament.attributes.name.toLowerCase().startsWith(focusedOption.value.toLowerCase()))
     await interaction.respond(
         filtered.map((tournament) => ({
-            name: tournament.name,
-            value: tournament.id.toString(),
+            name: tournament.attributes.name,
+            value: tournament.id,
         }))
     )
+}
+
+function findProfile(participant: Awaited<ReturnType<typeof joinTournament>>) {
+    return participant.included?.find((included) => included.type === 'user')
 }

@@ -1,126 +1,110 @@
-import { expect, it, describe, mock } from 'bun:test'
-import { type ChatInputCommandInteraction } from 'discord.js'
+import { expect, it, describe, mock, beforeEach, afterEach } from 'bun:test'
+
+import getEmbedBuilder from '../../embedBuilder'
+import * as challongeApi from '../../challongeApi'
+import calculateStandings, { type Standing } from '../../standingCalculator'
 import mockLogger from '../../__mocks__/logger'
-import type { Standing } from '../../standingCalculator'
+import type { ChatInputCommandInteraction } from 'discord.js'
+import { execute } from '../end'
 
-const mockEmbedBuilderModule = {
-    default: mock(),
-}
+beforeEach(() => {
+    // Set up common mocks
+    mock.module('../../logger', () => ({ default: mockLogger }))
+    mock.module('../../standingCalculator', () => ({ default: mock() }))
+    mock.module('../../embedBuilder', () => ({ default: mock() }))
+    mock.module('../../challongeApi', () => ({
+        listTournaments: mock(),
+        endTournament: mock(),
+        getTournament: mock(),
+    }))
+})
 
-const mockChallongeApi = {
-    getTournaments: mock(),
-    endTournament: mock(),
-    getTournament: mock(),
-}
-
-const mockStandingCalculator = {
-    default: mock(),
-}
-
-mock.module('../../logger', () => ({ default: mockLogger }))
-mock.module('../../challongeApi', () => mockChallongeApi)
-mock.module('../../standingCalculator', () => mockStandingCalculator)
-mock.module('../../embedBuilder', () => mockEmbedBuilderModule)
-
-const tournament = {
-    id: 12345,
-    name: 'test',
-}
-const mockInteraction = {
-    reply: mock(),
-    options: {
-        getString: mock(),
-    },
-}
-
-const standings: Standing[] = [
-    {
-        id: 1,
-        name: 'Player One',
-        wins: 1,
-        losses: 0,
-        ties: 0,
-        gameWins: 2,
-        gameTies: 0,
-        rank: 0,
-    },
-    {
-        id: 2,
-        name: 'Player Two',
-        wins: 0,
-        losses: 1,
-        ties: 0,
-        gameWins: 1,
-        gameTies: 0,
-        rank: 1,
-    },
-    {
-        id: 3,
-        name: 'Player Three',
-        wins: 0,
-        losses: 0,
-        ties: 0,
-        gameWins: 0,
-        gameTies: 0,
-        rank: 2,
-    },
-    {
-        id: 4,
-        name: 'Player Four',
-        wins: 0,
-        losses: 0,
-        ties: 0,
-        gameWins: 0,
-        gameTies: 0,
-        rank: 3,
-    },
-]
+afterEach(() => {
+    // Clean up all mocks
+    mock.restore()
+    mock.clearAllMocks()
+})
 
 describe('execute', () => {
+    const standings: Standing[] = [
+        {
+            id: '1',
+            name: 'Player One',
+            wins: 1,
+            losses: 0,
+            ties: 0,
+            gameWins: 2,
+            gameLosses: 0,
+            points: 3,
+            rank: 0,
+        },
+        {
+            id: '2',
+            name: 'Player Two',
+            wins: 0,
+            losses: 1,
+            ties: 0,
+            gameWins: 1,
+            gameLosses: 0,
+            points: 1,
+            rank: 1,
+        },
+        {
+            id: '3',
+            name: 'Player Three',
+            wins: 0,
+            losses: 0,
+            ties: 0,
+            gameWins: 0,
+            gameLosses: 0,
+            points: 0,
+            rank: 2,
+        },
+        {
+            id: '4',
+            name: 'Player Four',
+            wins: 0,
+            losses: 0,
+            ties: 0,
+            gameWins: 0,
+            gameLosses: 0,
+            points: 0,
+            rank: 3,
+        },
+    ]
+
     it('should end a tournament and give reply', async () => {
         // arrange
+        const mockInteraction = {
+            reply: mock(),
+            options: {
+                getString: mock(() => '12345'),
+            },
+        }
+
         const mockEmbedBuilder = {
             setTitle: mock(() => mockEmbedBuilder),
             addFields: mock(() => mockEmbedBuilder),
             setURL: mock(() => mockEmbedBuilder),
             setImage: mock(() => mockEmbedBuilder),
             setThumbnail: mock(() => mockEmbedBuilder),
+            setDescription: mock(() => mockEmbedBuilder),
         }
 
-        const { execute } = await import('../end')
-        mockChallongeApi.getTournament.mockResolvedValue(tournament)
-        mockStandingCalculator.default.mockResolvedValue(standings)
-        mockInteraction.options.getString.mockReturnValue(tournament.id.toString())
-        mockEmbedBuilderModule.default.mockReturnValue(mockEmbedBuilder)
+        challongeApi.getTournament.mockResolvedValue({ data: { id: '12345', attributes: { name: 'test' } } })
+        challongeApi.endTournament.mockResolvedValue({})
+        challongeApi.listTournaments.mockResolvedValue([])
+        getEmbedBuilder.mockReturnValue(mockEmbedBuilder)
+        calculateStandings.mockResolvedValue(standings)
 
         // act
         await execute(mockInteraction as unknown as ChatInputCommandInteraction)
 
         // assert
-        expect(mockChallongeApi.endTournament).toHaveBeenCalledWith(tournament.id)
-        expect(mockInteraction.reply).toHaveBeenCalledWith(expect.objectContaining({ embeds: [expect.anything()] }))
-    })
-
-    it('should reply with standings', async () => {
-        // arrange
-        const mockEmbedBuilder = {
-            setTitle: mock(() => mockEmbedBuilder),
-            addFields: mock(() => mockEmbedBuilder),
-            setURL: mock(() => mockEmbedBuilder),
-            setImage: mock(() => mockEmbedBuilder),
-            setThumbnail: mock(() => mockEmbedBuilder),
-        }
-
-        const { execute } = await import('../end')
-        mockChallongeApi.getTournament.mockResolvedValue(tournament)
-        mockStandingCalculator.default.mockResolvedValue(standings)
-        mockInteraction.options.getString.mockReturnValue(tournament.id.toString())
-        mockEmbedBuilderModule.default.mockReturnValue(mockEmbedBuilder)
-
-        // act
-        await execute(mockInteraction as unknown as ChatInputCommandInteraction)
-
-        // assert
+        expect(challongeApi.getTournament).toHaveBeenCalledWith('12345')
+        expect(challongeApi.endTournament).toHaveBeenCalledWith('12345')
+        expect(getEmbedBuilder).toHaveBeenCalledWith()
+        expect(calculateStandings).toHaveBeenCalledWith('12345')
         expect(mockEmbedBuilder.addFields).toHaveBeenCalledWith({
             name: 'Standings',
             value: '🥇 1st: Player One (1-0-0)\n🥈 2nd: Player Two (0-1-0)\n🥉 3rd: Player Three (0-0-0)',
