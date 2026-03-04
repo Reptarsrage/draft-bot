@@ -15,7 +15,17 @@ export async function hostLiveImage(imageUrl: string) {
         const response = await fetch(`${imageHosterUrl}/convert`, {
             method: 'POST',
             body: JSON.stringify({ imageUrl } satisfies ConvertRequest),
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
         })
+
+        if (!response.ok) {
+            const errorResponse = await response.json()
+            logger.error(errorResponse, 'Failed to host live image')
+            return imageUrl
+        }
 
         const data = (await response.json()) as ConvertResponse
         return data.imageUrl
