@@ -2,6 +2,7 @@ import { SlashCommandBuilder, type ChatInputCommandInteraction, type Autocomplet
 import { listTournaments, startTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
 import getEmbedBuilder from '../embedBuilder'
+import { hostLiveImage } from '../liveImageHostService'
 
 export const data = new SlashCommandBuilder()
     .setName('start')
@@ -14,13 +15,14 @@ export async function execute(interaction: ChatInputCommandInteraction) {
     const tournament = await getTournament(tournamentId)
     await startTournament(tournament.data.id)
 
+    const liveImageUrl = await hostLiveImage(tournament.data.attributes.live_image_url)
     const draftUrl = `https://draftmancer.com/?session=${tournament.data.id}`
 
     const ebmed = getEmbedBuilder()
         .setTitle(`${tournament.data.attributes.name} started!`)
         .setDescription(`Generated draft URL: ${draftUrl}`)
         .setURL(tournament.data.attributes.full_challonge_url)
-        .setImage(tournament.data.attributes.live_image_url)
+        .setImage(liveImageUrl)
 
     await interaction.reply({ embeds: [ebmed] })
 }

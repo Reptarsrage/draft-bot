@@ -3,6 +3,7 @@ import { listTournaments, endTournament, getTournament } from '../challongeApi'
 import logger from '../logger'
 import getEmbedBuilder from '../embedBuilder'
 import calculateStandings from '../standingCalculator'
+import { hostLiveImage } from '../liveImageHostService'
 
 export const data = new SlashCommandBuilder()
     .setName('end')
@@ -34,11 +35,13 @@ export async function execute(interaction: ChatInputCommandInteraction) {
         })
         .join('\n')
 
+    const liveImageUrl = await hostLiveImage(tournament.data.attributes.live_image_url)
+
     const embed = getEmbedBuilder()
         .setTitle(`${tournament.data.attributes.name} ended!`)
         .addFields({ name: 'Standings', value: winners })
         .setURL(tournament.data.attributes.full_challonge_url)
-        .setImage(tournament.data.attributes.live_image_url)
+        .setImage(liveImageUrl)
 
     if (participated.length > 0) {
         embed.addFields({ name: 'Received a participation trophy', value: participated })
