@@ -283,14 +283,17 @@ export async function recordMatch(tournamentId: string, matchId: string, playerO
         data: {
             type: 'Match',
             attributes: {
+                tie: playerOneScore === playerTwoScore,
                 match: [
                     {
                         participant_id: playerOneId,
                         score_set: playerOneScore.toString(),
+                        advancing: playerOneScore > playerTwoScore,
                     },
                     {
                         participant_id: playerTwoId,
                         score_set: playerTwoScore.toString(),
+                        advancing: playerTwoScore > playerOneScore,
                     },
                 ],
             },
